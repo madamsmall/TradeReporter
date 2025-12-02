@@ -1,0 +1,1 @@
+This addon exists to give the player a visual record of items and money traded to them. Currently in TurtleWow, items given in trade are not recorded or reported after the button is pressed. 

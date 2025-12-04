@@ -1,7 +1,7 @@
 ## Interface: 11200
-## Title:  |cffabd473Turtle|cffffffffTradeReporter
+## Title:  TradeReporter
 ## Author: Madamsmall
-## Notes: Trading made Simple
+## Notes: Reports to the chat window when player gives or receives items or money in trade window.
 ## Version: 1.0.0
 ## OptionalDeps: Ace2
 ## X-Category: Trade

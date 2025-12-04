@@ -4,148 +4,150 @@
 -- Reports in your chat window any items or money traded to you.
 ----------------------------------------------------------------------------------------------------
 
--- Define our main class object
 TradeReporter = AceLibrary("AceAddon-2.0"):new("AceEvent-2.0", "AceHook-2.0", "AceConsole-2.0", "AceDebug-2.0");
 
-----------------------------------------------------------------------------------------------------
--- Addon Initializing/Enabling/Disabling
-----------------------------------------------------------------------------------------------------
-function TradeReporter:OnAddonLoaded()
-	--Define a debug level to a level that does not completly spam the user with stuff from us
-	self:SetDebugLevel(2);
-	
-	self.otherMoney = 0;
-	self.tradePartner = "";
-	self.currentMoney = "";
-	self.newMoney = "";
-	self.accepted = false;
-	self.received = false
-	self.given = false
+tradePartner = "";	
+given = false
+received = false	
+accepted = false
+recM = ""
+gaveM = ""
+playerItemName = {}
+playerItemQuantity = {}
+targetItemName = {}
+targetItemQuantity = {}
+playerItemLink = {}
+targetItemLink = {}
 
-	--Setup our chat command interface
-	self:RegisterChatCommand({"/tr", "/madamtp", "/tradereporter"},
-		{
-			type = "group",
-			args = {				
-				sort = {
-					type = "text",					
-				}
-			}
-		},
-		"TRADEREPORTER"
-	);
+function TR_OnEvent()
+	if(event == "UI_ERROR_MESSAGE") then
+		if(arg1 == "Inventory is full.") then			
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("Unable to trade: " .. arg1))		
+		end
+	elseif(event == "UI_INFO_MESSAGE") then
+		if(arg1 == ERR_TRADE_CANCELLED) then
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. arg1))
+		elseif(arg1 == ERR_TRADE_COMPLETE) then
+			ReportToChat()
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. arg1))
+		end
+	elseif(event == "TRADE_SHOW") then
+		tradePartner = UnitName("NPC")
+	elseif(event == "TRADE_REQUEST_CANCEL") then
+		ResetVars()
+	elseif(event == "TRADE_ACCEPT_UPDATE") then
+		if arg1 == 1 and arg2 == 1 then
+			accepted = true
+			recM = tonumber(GetTargetTradeMoney())
+			gaveM = tonumber(GetPlayerTradeMoney())
+
+			for i = 1, 6 do 
+				if GetTradePlayerItemInfo(i) then					
+					local name, texture, quantity, quality, isUsable, enchant = GetTradePlayerItemInfo(i)
+					playerItemName[i] = name
+					playerItemQuantity[i] = quantity
+					playerItemLink[i] = GetTradePlayerItemLink(i)
+				end				
+			end
+
+			for i = 1, 6 do 
+				if GetTradeTargetItemInfo(i) then					
+					local name, texture, quantity, quality, isUsable, enchant = GetTradeTargetItemInfo(i)
+					targetItemName[i] = name
+					targetItemQuantity[i] = quantity
+					targetItemLink[i] = GetTradeTargetItemLink(i)
+				end				
+			end
+		else 
+			accepted = false
+		end
+	end
 end
 
-function TradeReporter:OnEnable()	
+function TR_OnLoad(self)
+	self:RegisterEvent("UI_ERROR_MESSAGE")	
+	self:RegisterEvent("UI_INFO_MESSAGE")	
 	self:RegisterEvent("TRADE_ACCEPT_UPDATE")
 	self:RegisterEvent("TRADE_SHOW")
 	self:RegisterEvent("TRADE_CLOSED")	
 	self:RegisterEvent("TRADE_REQUEST_CANCEL")
-	self:RegisterEvent("PLAYER_MONEY")	
-
-	DEFAULT_CHAT_FRAME:AddMessage(self:ColorMessage("TradeReporter: Loaded(v1.0.0)")) 
-	self:LevelDebug(2, "TradeReporter: Loaded(v1.0.0)");
+	self:RegisterEvent("PLAYER_MONEY")			
+	self:RegisterEvent("PLAYER_TRADE_MONEY")
+	self:RegisterEvent("TRADE_MONEY_CHANGED")
 end
 
-function TradeReporter:OnDisable()
-	self:LevelDebug(1, "TradeReporter has been Disabled");
+function OnEnable()				
+	DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TradeReporter: Loaded(v1.0.0)")) 
+end
+ 
+function ResetVars()
+	tradePartner = "" 	
+	given = false
+	received = false
+	accepted = false
+	recM = ""
+	gaveM = ""
+	playerItemName = {}
+	playerItemQuantity = {}
+	targetItemName = {}
+	targetItemQuantity = {}
+	playerItemLink = {}
+	targetItemLink = {}
 end
 
-function TradeReporter:TRADE_SHOW()
-	self.tradePartner = UnitName("NPC")
-	self:LevelDebug(1, "Trade opened with " .. self.tradePartner);
-end
+function ReportToChat()	
+	for i = 1, 6 do 							
+		if targetItemName[i] then			
+			local itemLink = targetItemLink[i]
+			local quantity = targetItemQuantity[i]
 
-function TradeReporter:TRADE_CLOSED()	
-	self:LevelDebug(2, "TRADE_CLOSED fired");
-end
-
-function TradeReporter:TRADE_REQUEST_CANCEL()
-    self:LevelDebug(2, "TRADE_REQUEST_CANCEL fired");
-	self.tradePartner = nil 	
-	self.accepted = false
-	self.newMoney = ""
-	self.currentMoney = ""
-end
-
-function TradeReporter:PLAYER_MONEY()
-	self:LevelDebug(2, "PLAYER_MONEY fired");
-	if self.accepted then 
-		self.newMoney = GetMoney()	
-		-- money traded
-		local moneyChange = tonumber(self.newMoney) - (tonumber(self.currentMoney))
-		if moneyChange > 0 then
-			if not self.received then 
-				DEFAULT_CHAT_FRAME:AddMessage(self:ColorMessage("Received in Trade from " .. self.tradePartner .. ": ") .. self:GetMoneyColorText(moneyChange)) 
-			else
-				DEFAULT_CHAT_FRAME:AddMessage(self:GetMoneyColorText(moneyChange))
-			end			
-		end
-		if moneyChange < 0 then
-			moneyChange = moneyChange * -1
-			if not self.given then 
-					DEFAULT_CHAT_FRAME:AddMessage(self:ColorMessage("Gave in Trade to " .. self.tradePartner .. ": ") .. self:GetMoneyColorText(moneyChange)) 
-			else			
-				DEFAULT_CHAT_FRAME:AddMessage(self:GetMoneyColorText(moneyChange))
+			if not received then 
+				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Received in Trade from " .. tradePartner .. ": ")) 
+				received = true
 			end
-		end		
-	end
+					
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. quantity .. "x ") .. itemLink) 	
+		end
+	end  
+	if recM and recM ~= "" and recM ~= 0 then
+		if not received then 
+				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Received in Trade from " .. tradePartner .. ": " .. GetMoneyColorText(recM))) 
+				received = true
+		else
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: ") .. GetMoneyColorText(recM))
+		end 
+	end 
 
-	self.tradePartner = nil 	
-	self.accepted = false
-	self.newMoney = ""
-	self.currentMoney = ""
-	self.received = false
-	self.given = false
+	for i = 1, 6 do 
+		if playerItemName[i] then
+			local itemLink = playerItemLink[i]
+			local quantity = playerItemQuantity[i]		
+			if not given then 
+				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Gave in Trade to " .. tradePartner .. ": ")) 
+				given = true
+			end
+					
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. quantity .. "x ") .. itemLink) 				
+		end
+	end
+	if gaveM and gaveM ~= "" and gaveM ~= 0 then
+		if not given then 
+				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Gave in Trade to " .. tradePartner .. ": " .. GetMoneyColorText(gaveM))) 
+				given = true
+		else
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: ") .. GetMoneyColorText(gaveM))
+		end
+	end 		
+	ResetVars()		
 end
 
-function TradeReporter:ColorMessage(message)
+function ColorMessage(message)
 	return "|cffA0B5FA" .. message .. "|r"	
 end
 
-function TradeReporter:TRADE_ACCEPT_UPDATE(p1, p2)
-	self:LevelDebug(2, "TRADE_ACCEPT_UPDATE fired");
-	-- both players accepted
-	if p1 == 1  and p2 == 1 then
-		self:LevelDebug(2, "Trade accepted with " .. self.tradePartner);		
-		self.accepted = true;
-		self.currentMoney = GetMoney()
-		
-		--- Items traded
-		self.received = false
-		self.given = false
+function GetMoneyColorText(money)
+	if not money then return end
 
-		for i = 1, 6 do 
-			local name, texture, quantity, quality, isUsable, enchant = GetTradeTargetItemInfo(i)
-			if name then			
-				local itemLink = GetTradeTargetItemLink(i)	
-
-				if not self.received then 
-					DEFAULT_CHAT_FRAME:AddMessage(self:ColorMessage("Received in Trade from " .. self.tradePartner .. ": ")) 
-					self.received = true
-				end
-						
-				DEFAULT_CHAT_FRAME:AddMessage(self:ColorMessage(quantity .. "x ") .. itemLink) 	
-			end
-		end
-
-		for i = 1, 6 do 
-			local name, texture, quantity, quality, isUsable, enchant = GetTradePlayerItemInfo(i)
-			if name then			
-				local itemLink = GetTradePlayerItemLink(i)
-
-				if not self.given then 
-					DEFAULT_CHAT_FRAME:AddMessage(self:ColorMessage("Gave in Trade to " .. self.tradePartner .. ": ")) 
-					self.given = true
-				end
-						
-				DEFAULT_CHAT_FRAME:AddMessage(self:ColorMessage(quantity .. "x ") .. itemLink) 	
-			end
-		end
-	end
-end
-
-function TradeReporter:GetMoneyColorText(money)
 	local GOLD="ffd100"
 	local SILVER="e6e6e6"
 	local COPPER="c8602c"
@@ -167,11 +169,12 @@ function TradeReporter:GetMoneyColorText(money)
 	end
 	
 	local text = ""
-	-- if(g>0) then text = text..g.."|cff"..GOLD.."g |r"; end
-	-- if(s>0) then text = text..s.."|cff"..SILVER.."s |r"; end
-	-- if(c>0) then text = text..c.."|cff"..COPPER.."c|r"; end
 
 	text = text .. g .. "|cff" .. GOLD .. "g |r" .. sil .. "|cff" .. SILVER .. "s |r" .. cop .. "|cff" .. COPPER .. "c|r"
 
 	return text;
 end
+
+local frame = CreateFrame("Frame", "TradeReporter Addon Frame");
+frame:SetScript("OnEvent", TR_OnEvent);
+TR_OnLoad(frame);

@@ -31,6 +31,10 @@
         "DropDownList1",
         "WorldFrame",
         "GameTooltip_SetDefaultAnchor",
-        "CLOSE"
+        "CLOSE",
+        "ERR_TRADE_BAG_FULL"
+    ],
+    "Lua.diagnostics.disable": [
+        "assign-type-mismatch"
     ]
 }

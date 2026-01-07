@@ -131,7 +131,7 @@ end
 function TR_OnEvent()
 	if(event == "UI_ERROR_MESSAGE") then
 		if(arg1 == "Inventory is full.") then			
-			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("Unable to trade: " .. arg1))		
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Error - " .. arg1))		
 		end
 	elseif(event == "UI_INFO_MESSAGE") then
 		if(arg1 == ERR_TRADE_CANCELLED) then

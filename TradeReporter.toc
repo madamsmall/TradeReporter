@@ -1,17 +1,8 @@
-## Interface: 11200
+## Interface: 16001
 ## Title:  TradeReporter
 ## Author: Madamsmall
 ## Notes: Reports to the chat window when player gives or receives items or money in trade window.
 ## Version: 1.0.0
-## OptionalDeps: Ace2
 ## X-Category: Trade
-
-Libs\AceLibrary\AceLibrary.lua
-Libs\AceOO-2.0\AceOO-2.0.lua
-Libs\AceEvent-2.0\AceEvent-2.0.lua
-Libs\AceConsole-2.0\AceConsole-2.0.lua
-Libs\AceDebug-2.0\AceDebug-2.0.lua
-Libs\AceAddon-2.0\AceAddon-2.0.lua
-Libs\AceHook-2.0\AceHook-2.0.lua
 
 Core.lua

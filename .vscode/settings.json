@@ -12,7 +12,7 @@
         "utf8": "disable"
     },
     "Lua.workspace.library": [
-        "~\\.vscode\\extensions\\ketho.wow-api-0.21.0\\Annotations\\Core"
+        "~\\.vscode\\extensions\\ketho.wow-api-0.22.3\\Annotations\\Core"
     ],
     "Lua.diagnostics.globals": [
         "DEFAULT_CHAT_FRAME",
@@ -20,7 +20,6 @@
         "ERR_TRADE_COMPLETE",
         "NONE",
         "ReloadUI",
-        "SlashCmdList",
         "ColorPickerFrame",
         "FACTION_HORDE",
         "FACTION_ALLIANCE",
@@ -32,9 +31,23 @@
         "WorldFrame",
         "GameTooltip_SetDefaultAnchor",
         "CLOSE",
-        "ERR_TRADE_BAG_FULL"
-    ],
+        "ERR_TRADE_BAG_FULL",
+        "ShowUIPanel",
+        "UIParent",
+        "GameFontHighlightSmall",
+        "GameFontGreenSmall",
+        "ChatFontNormal",
+        "GameFontNormalSmall",
+        "GameFontDisableSmall",
+        "TOOLTIP_DEFAULT_COLOR",
+        "TOOLTIP_DEFAULT_BACKGROUND_COLOR",
+        "GameTooltip",
+        "NORMAL_FONT_COLOR",
+        "SlashCmdList"
+    ],    
     "Lua.diagnostics.disable": [
-        "assign-type-mismatch"
-    ]
+        "assign-type-mismatch",
+        "trailing-space"
+    ],
+    "wowAPI.luals.flavor": "Retail"
 }

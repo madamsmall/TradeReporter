@@ -1,137 +1,147 @@
+---@diagnostic disable: create-global
 ----------------------------------------------------------------------------------------------------
 -- TradeReporter by Madamsmall
 --
 -- Reports in your chat window any items or money traded to you.
 ----------------------------------------------------------------------------------------------------
 
-TradeReporter = AceLibrary("AceAddon-2.0"):new("AceEvent-2.0", "AceHook-2.0", "AceConsole-2.0", "AceDebug-2.0");
+local TradeReporter = CreateFrame("Frame", "TradeReporter");
 
-tradePartner = "";	
-given = false
-received = false	
-accepted = false
-recM = ""
-gaveM = ""
-playerItemName = {}
-playerItemQuantity = {}
-playerEnchantName = {}
-targetItemName = {}
-targetItemQuantity = {}
-targetEnchantName = {}
-playerItemLink = {}
-targetItemLink = {}
+TradePartner = ""
+Given = false
+Received = false
+Accepted = false
+RecM = ""
+GaveM = ""
+PlayerItemName = {}
+PlayerItemQuantity = {}
+PlayerEnchantName = {}
+TargetItemName = {}
+TargetItemQuantity = {}
+TargetEnchantName = {}
+PlayerItemLink = {}
+TargetItemLink = {}
 
-function TR_OnLoad(self)
-	self:RegisterEvent("UI_ERROR_MESSAGE")	
-	self:RegisterEvent("UI_INFO_MESSAGE")	
-	self:RegisterEvent("TRADE_ACCEPT_UPDATE")
-	self:RegisterEvent("TRADE_SHOW")
-	self:RegisterEvent("TRADE_CLOSED")	
-	self:RegisterEvent("TRADE_REQUEST_CANCEL")
-	self:RegisterEvent("PLAYER_MONEY")			
-	self:RegisterEvent("PLAYER_TRADE_MONEY")
-	self:RegisterEvent("TRADE_MONEY_CHANGED")
+function TR_OnLoad(TradeReporter)
+	TradeReporter:RegisterEvent("UI_ERROR_MESSAGE")
+	TradeReporter:RegisterEvent("UI_INFO_MESSAGE")
+	TradeReporter:RegisterEvent("TRADE_ACCEPT_UPDATE")
+	TradeReporter:RegisterEvent("TRADE_SHOW")
+	TradeReporter:RegisterEvent("TRADE_CLOSED")
+	TradeReporter:RegisterEvent("TRADE_REQUEST_CANCEL")
+	TradeReporter:RegisterEvent("PLAYER_MONEY")
+	TradeReporter:RegisterEvent("PLAYER_TRADE_MONEY")
+	TradeReporter:RegisterEvent("TRADE_MONEY_CHANGED")
 end
 
-function OnEnable()				
-	DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TradeReporter: Loaded(v1.0.0)")) 
+TradeReporter:SetScript("OnEvent", TR_OnEvent)
+
+function OnEnable()
+	DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TradeReporter: Loaded(v1.0.0)"))
 end
- 
+
+-- /tr and /tradereporter
+SLASH_TR1 = "/tr"
+SLASH_TR2 = "/tradereporter"
+SlashCmdList["TR"] = function(msg)
+	DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Loaded(v1.0.0)"))
+end
+
 function ResetVars()
-	tradePartner = "" 	
-	given = false
-	received = false
-	accepted = false
-	recM = ""
-	gaveM = ""
-	playerItemName = {}
-	playerItemQuantity = {}
-	targetEnchantName = {}
-	playerEnchantName = {}
-	targetItemName = {}
-	targetItemQuantity = {}
-	playerItemLink = {}
-	targetItemLink = {}
+	TradePartner = ""
+	Given = false
+	Received = false
+	Accepted = false
+	RecM = ""
+	GaveM = ""
+	PlayerItemName = {}
+	PlayerItemQuantity = {}
+	TargetEnchantName = {}
+	PlayerEnchantName = {}
+	TargetItemName = {}
+	TargetItemQuantity = {}
+	PlayerItemLink = {}
+	TargetItemLink = {}
 end
 
-function ReportToChat()	
+function ReportToChat()
 	-- report items received from target to player
-	for i = 1, 6 do 							
-		if targetItemName[i] then			
-			local itemLink = targetItemLink[i]
-			local quantity = targetItemQuantity[i]
+	for i = 1, 6 do
+		if TargetItemName[i] then
+			local itemLink = TargetItemLink[i]
+			local quantity = TargetItemQuantity[i]
 			-- print the header message for a trade if it hasn't been printed yet
-			if not received then 
-				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Received in Trade from " .. tradePartner .. ": ")) 
-				received = true
+			if not Received then
+				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Received in Trade from " .. TradePartner .. ": "))
+				Received = true
 			end
-					
-			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. quantity .. "x ") .. itemLink) 	
+
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. quantity .. "x ") .. itemLink)
 		end
 	end
 	-- report enchant received from target to player
-	if playerEnchantName[7] then
-		local itemLink = playerItemLink[7]
-		local enchantName = playerEnchantName[7]
-		if not received then 
-				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Received in Trade from " .. tradePartner .. ": ")) 
-				received = true
+	if PlayerEnchantName[7] then
+		local itemLink = PlayerItemLink[7]
+		local enchantName = PlayerEnchantName[7]
+		if not Received then
+				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Received in Trade from " .. TradePartner .. ": "))
+				Received = true
 		end
-				
+
 		DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Enchant [") .. enchantName .. ColorMessage("] applied to ") .. itemLink)
 	end
 	-- report money received from target to player
-	if recM and recM ~= "" and recM ~= 0 then
+	if RecM and RecM ~= "" and RecM ~= 0 then
 		-- print the header message for a trade if it wasn't printed before items were listed
-		if not received then 
-				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Received in Trade from " .. tradePartner .. ": " .. GetMoneyColorText(recM))) 
-				received = true
+		if not Received then
+				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Received in Trade from " .. TradePartner .. ": " .. GetMoneyColorText(RecM)))
+				Received = true
 		else
-			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: ") .. GetMoneyColorText(recM))
-		end 
-	end 
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: ") .. GetMoneyColorText(RecM))
+		end
+	end
 
 	-- report items given from player to target
-	for i = 1, 6 do 
-		if playerItemName[i] then
-			local itemLink = playerItemLink[i]
-			local quantity = playerItemQuantity[i]		
-			if not given then 
-				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Gave in Trade to " .. tradePartner .. ": ")) 
-				given = true
+	for i = 1, 6 do
+		if PlayerItemName[i] then
+			local itemLink = PlayerItemLink[i]
+			local quantity = PlayerItemQuantity[i]
+			if not Given then
+				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Gave in Trade to " .. TradePartner .. ": "))
+				Given = true
 			end
-					
-			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. quantity .. "x ") .. itemLink) 				
+
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. quantity .. "x ") .. itemLink)
 		end
 	end
 	-- report enchant given from player to target
-	if targetEnchantName[7] then
-		local itemLink = targetItemLink[7]
-		local enchantName = targetEnchantName[7]
-		if not given then 
-				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Gave in Trade to " .. tradePartner .. ": ")) 
-				given = true
+	if TargetEnchantName[7] then
+		local itemLink = TargetItemLink[7]
+		local enchantName = TargetEnchantName[7]
+		if not Given then
+				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Gave in Trade to " .. TradePartner .. ": "))
+				Given = true
 		end
-				
+
 		DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Enchant [") .. enchantName .. ColorMessage("] applied to ") .. itemLink)
 	end
 	-- report money given from player to target
-	if gaveM and gaveM ~= "" and gaveM ~= 0 then
-		if not given then 
-				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Gave in Trade to " .. tradePartner .. ": " .. GetMoneyColorText(gaveM))) 
-				given = true
+	if GaveM and GaveM ~= "" and GaveM ~= 0 then
+		if not Given then
+				DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Gave in Trade to " .. TradePartner .. ": " .. GetMoneyColorText(GaveM)))
+				Given = true
 		else
-			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: ") .. GetMoneyColorText(gaveM))
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: ") .. GetMoneyColorText(GaveM))
 		end
-	end 	
+	end
 
-	ResetVars()		
+	ResetVars()
 end
 
 function TR_OnEvent()
 	if(event == "UI_ERROR_MESSAGE") then
-		if(arg1 == "Inventory is full.") then			
-			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Error - " .. arg1))		
+		if(arg1 == "Inventory is full.") then
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Error - " .. arg1))
 		end
 	elseif(event == "UI_INFO_MESSAGE") then
 		if(arg1 == ERR_TRADE_CANCELLED) then
@@ -141,55 +151,55 @@ function TR_OnEvent()
 			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. arg1))
 		end
 	elseif(event == "TRADE_SHOW") then
-		tradePartner = UnitName("NPC")
+		TradePartner = UnitName("NPC")
 	elseif(event == "TRADE_REQUEST_CANCEL") then
 		ResetVars()
 	elseif(event == "TRADE_ACCEPT_UPDATE") then
 		if arg1 == 1 and arg2 == 1 then
-			accepted = true
-			recM = tonumber(GetTargetTradeMoney())
-			gaveM = tonumber(GetPlayerTradeMoney())
+			Accepted = true
+			RecM = tonumber(GetTargetTradeMoney())
+			GaveM = tonumber(GetPlayerTradeMoney())
 
 			-- Items being traded from player
-			for i = 1, 6 do 
-				if GetTradePlayerItemInfo(i) then					
+			for i = 1, 6 do
+				if GetTradePlayerItemInfo(i) then
 					local name, texture, quantity, quality, isUsable, enchantApplied = GetTradePlayerItemInfo(i)
-					playerItemName[i] = name
-					playerItemQuantity[i] = quantity
-					playerItemLink[i] = GetTradePlayerItemLink(i)
-				end				
+					PlayerItemName[i] = name
+					PlayerItemQuantity[i] = quantity
+					PlayerItemLink[i] = GetTradePlayerItemLink(i)
+				end
 			end
 			-- Items being traded to player
-			for i = 1, 6 do 
-				if GetTradeTargetItemInfo(i) then					
+			for i = 1, 6 do
+				if GetTradeTargetItemInfo(i) then
 					local name, texture, quantity, quality, isUsable, enchantApplied = GetTradeTargetItemInfo(i)
-					targetItemName[i] = name
-					targetItemQuantity[i] = quantity
-					targetItemLink[i] = GetTradeTargetItemLink(i)
-				end				
+					TargetItemName[i] = name
+					TargetItemQuantity[i] = quantity
+					TargetItemLink[i] = GetTradeTargetItemLink(i)
+				end
 			end
 			-- Enchants being applied by target to player (item in player side slot 7)
-			if GetTradePlayerItemInfo(7) then					
+			if GetTradePlayerItemInfo(7) then
 					local name, texture, quantity, quality, enchantReceived = GetTradePlayerItemInfo(7)
-					playerItemName[7] = name
-					playerEnchantName[7] = enchantReceived
-					playerItemLink[7] = GetTradePlayerItemLink(7)
-				end		
+					PlayerItemName[7] = name
+					PlayerEnchantName[7] = enchantReceived
+					PlayerItemLink[7] = GetTradePlayerItemLink(7)
+				end
 			-- Enchants being applied by player to target (item in target side slot 7)
-			if GetTradeTargetItemInfo(7) then					
+			if GetTradeTargetItemInfo(7) then
 					local name, texture, quantity, quality, isUsable, enchantGiven = GetTradeTargetItemInfo(7)
-					targetItemName[7] = name
-					targetEnchantName[7] = enchantGiven
-					targetItemLink[7] = GetTradeTargetItemLink(7)
-				end		
-		else 
-			accepted = false
+					TargetItemName[7] = name
+					TargetEnchantName[7] = enchantGiven
+					TargetItemLink[7] = GetTradeTargetItemLink(7)
+				end
+		else
+			Accepted = false
 		end
 	end
 end
 
 function ColorMessage(message)
-	return "|cffA0B5FA" .. message .. "|r"	
+	return "|cffA0B5FA" .. message .. "|r"
 end
 
 function GetMoneyColorText(money)
@@ -198,7 +208,7 @@ function GetMoneyColorText(money)
 	local GOLD="ffd100"
 	local SILVER="e6e6e6"
 	local COPPER="c8602c"
-	
+
 	local g = math.floor( money / 1e4 );
 	local s = math.floor( money / 100 ) - g*100 ;
 	local c = money - ( g * 100 + s ) * 100;
@@ -207,14 +217,14 @@ function GetMoneyColorText(money)
 	if s < 10 then sil = "0" .. s
 	else sil = "" .. s
 	end
-	
+
 	local cop = ""
-	if c < 10 then 
+	if c < 10 then
 		cop = "0" .. c
-	else 
+	else
 		cop = "" .. c
 	end
-	
+
 	local text = ""
 
 	text = text .. g .. "|cff" .. GOLD .. "g |r" .. sil .. "|cff" .. SILVER .. "s |r" .. cop .. "|cff" .. COPPER .. "c|r"

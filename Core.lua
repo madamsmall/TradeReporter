@@ -5,8 +5,6 @@
 -- Reports in your chat window any items or money traded to you.
 ----------------------------------------------------------------------------------------------------
 
-local TradeReporter = CreateFrame("Frame", "TradeReporter");
-
 TradePartner = ""
 Given = false
 Received = false
@@ -32,19 +30,14 @@ function TR_OnLoad(TradeReporter)
 	TradeReporter:RegisterEvent("PLAYER_MONEY")
 	TradeReporter:RegisterEvent("PLAYER_TRADE_MONEY")
 	TradeReporter:RegisterEvent("TRADE_MONEY_CHANGED")
-end
-
-TradeReporter:SetScript("OnEvent", TR_OnEvent)
-
-function OnEnable()
-	DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TradeReporter: Loaded(v1.0.0)"))
+	DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TradeReporter: Loaded v2.0.0 (Forever)"))
 end
 
 -- /tr and /tradereporter
 SLASH_TR1 = "/tr"
 SLASH_TR2 = "/tradereporter"
 SlashCmdList["TR"] = function(msg)
-	DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Loaded(v1.0.0)"))
+	DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TradeReporter: Loaded v1.0.0 (Forever)"))
 end
 
 function ResetVars()
@@ -138,24 +131,22 @@ function ReportToChat()
 	ResetVars()
 end
 
-function TR_OnEvent()
-	if(event == "UI_ERROR_MESSAGE") then
-		if(arg1 == "Inventory is full.") then
-			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Error - " .. arg1))
-		end
-	elseif(event == "UI_INFO_MESSAGE") then
-		if(arg1 == ERR_TRADE_CANCELLED) then
-			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. arg1))
-		elseif(arg1 == ERR_TRADE_COMPLETE) then
+local function eventHandler(self, event, arg1, arg2)
+	local message = arg2
+	if(message == ERR_TRADE_BAG_FULL or message == ERR_TRADE_TARGET_BAG_FULL) then
+		DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: Error - " .. message))
+	elseif(message == ERR_TRADE_COMPLETE) then
+			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. message))
 			ReportToChat()
-			DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. arg1))
-		end
-	elseif(event == "TRADE_SHOW") then
-		TradePartner = UnitName("NPC")
-	elseif(event == "TRADE_REQUEST_CANCEL") then
+	elseif(message == ERR_INITIATE_TRADE_S or message == ERR_TRADE_REQUEST_S) then
+		DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. message))
+		TradePartner = TradeFrameRecipientNameText:GetText()
+	elseif(message == ERR_TRADE_CANCELLED) then
+		DEFAULT_CHAT_FRAME:AddMessage(ColorMessage("TR: " .. message))
 		ResetVars()
 	elseif(event == "TRADE_ACCEPT_UPDATE") then
-		if arg1 == 1 and arg2 == 1 then
+		TradePartner = TradeFrameRecipientNameText:GetText()
+		if arg1 == 1 then
 			Accepted = true
 			RecM = tonumber(GetTargetTradeMoney())
 			GaveM = tonumber(GetPlayerTradeMoney())
@@ -232,6 +223,6 @@ function GetMoneyColorText(money)
 	return text;
 end
 
-local frame = CreateFrame("Frame", "TradeReporter Addon Frame");
-frame:SetScript("OnEvent", TR_OnEvent);
+local frame = CreateFrame("Frame", "TradeReporter");
 TR_OnLoad(frame);
+frame:SetScript("OnEvent", eventHandler);

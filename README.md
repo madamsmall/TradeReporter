@@ -1,1 +1,1 @@
-This addon exists to give the player a visual record of items and money traded to them. Currently in TurtleWow, items given in trade are not recorded or reported after the button is pressed. 
+This addon exists to give the player a visual record of items and money traded to them. Currently in Wow Forever, items and money given or received in trade are not recorded or reported after the trade button is pressed, and there is no way to verify or return to that information after.
